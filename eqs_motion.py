@@ -7,8 +7,6 @@ from tqdm import tqdm
 from jax.numpy.fft import fft,ifft
 import scipy
 from functools import partial
-from diffrax import diffeqsolve, Dopri5, ODETerm, SaveAt, PIDController
-
 
 
 import Hamiltonian as ham
