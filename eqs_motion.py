@@ -7,6 +7,7 @@ from tqdm import tqdm
 from jax.numpy.fft import fft,ifft
 import scipy
 from functools import partial
+from diffrax import diffeqsolve, Tsit5, ODETerm, SaveAt, PIDController
 
 
 import Hamiltonian as ham
@@ -57,7 +58,7 @@ def dt_Phi_jax(Phi,t,args):
     return ans - kappa/2*Phi - jnp.sqrt(kappa)*PhiWVG_t
 
 
-
+    
 @jit
 def RK4_evolve_jax(Phi_0,Phi_in,params,T):
 
@@ -69,8 +70,16 @@ def RK4_evolve_jax(Phi_0,Phi_in,params,T):
  
     t_array = jnp.linspace(0,T,jnp.shape(Phi_in)[1])
     
-    ans = odeint(dt_Phi_jax,Phi_0,t_array,[Phi_in,params,T],atol=1.0e-5)
+    def vector_field(t, Phi, args):
+        return dt_Phi_jax(Phi,t,[Phi_in,params,T])
     
-    return jnp.transpose(ans)
+    term = ODETerm(vector_field)
+    solver = Tsit5()
+    saveat = SaveAt(ts=t_array)
+    stepsize_controller = PIDController(rtol=1e-5, atol=1e-5)
+
+    sol = diffeqsolve(term, solver, t0=0, t1=T, dt0=0.05, y0=Phi_0, saveat=saveat,stepsize_controller=stepsize_controller)
+    
+    return jnp.transpose(sol.ys)
   
     
