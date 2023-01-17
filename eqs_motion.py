@@ -58,9 +58,29 @@ def dt_Phi_jax(Phi,t,args):
     return ans - kappa/2*Phi - jnp.sqrt(kappa)*PhiWVG_t
 
 
-    
+
 @jit
 def RK4_evolve_jax(Phi_0,Phi_in,params,T):
+
+    # Output: Phi at time t=1 obtained using 4th order RK method
+    #         The output is a batch of several trajectories calculated in parallel
+    # Input: Phi_0 = initial state of Phi at time t=0
+    #        PhiWVG = waveguide input
+    #        params = parameters of the Hamiltonian, dissipation and cavity-waveguide coupling
+ 
+    t_array = jnp.linspace(0,T,jnp.shape(Phi_in)[1])
+    
+    ans = odeint(dt_Phi_jax,Phi_0,t_array,[Phi_in,params,T],atol=1.0e-5)
+    
+    return jnp.transpose(ans)
+  
+    
+
+    
+    
+    
+@jit
+def RK4_evolve_diffrax(Phi_0,Phi_in,params,T):
 
     # Output: Phi at time t=1 obtained using 4th order RK method
     #         The output is a batch of several trajectories calculated in parallel
