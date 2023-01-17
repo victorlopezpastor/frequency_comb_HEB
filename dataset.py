@@ -13,7 +13,7 @@ def pulse(t,T):
     
     sigma = 50.0
     
-    w = 0.9
+    w = 0.97
     
     return 0.5*( jnp.tanh(sigma*(t+w-T)) + jnp.tanh(sigma*(w-t+T)) )
 
