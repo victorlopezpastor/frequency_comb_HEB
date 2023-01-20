@@ -179,7 +179,7 @@ def net_output_diffrax_0(Psi_in,Theta_in,kappa,k_abs,chi,T):
 
 
 @jit
-def net_output_diffrax(Psi_in,Theta_in,kappa,k_abs,chi,T): 
+def net_output(Psi_in,Theta_in,kappa,k_abs,chi,T): 
     
     z = jnp.zeros(jnp.shape(Psi_in)[2])
     

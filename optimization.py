@@ -43,7 +43,7 @@ def field_to_label(Psi,interval_labels):
 @partial(jax.jit, static_argnames=['interval_labels'])
 def output_label(Psi_in,Theta_in,kappa,k_abs,chi,interval_labels,T):
     
-    [Psi_out,Theta_out] = sld.net_output_jax(Psi_in,Theta_in,   \
+    [Psi_out,Theta_out] = sld.net_output(Psi_in,Theta_in,   \
                                          kappa,k_abs,chi,T)
     
     return field_to_label(Psi_out,interval_labels)
@@ -74,7 +74,7 @@ def test_acc(target,Psi_in_all,Theta_in,kappa,k_abs,chi,   \
 
 
 @partial(jax.jit, static_argnames=['interval_labels'])
-def echo_step_jax(Psi_in,Theta_in,kappa,k_abs,chi,
+def echo_step(Psi_in,Theta_in,kappa,k_abs,chi,
                   target,eta,interval_labels,T):
     
     # implements the Hamiltonian part of HEB: forward pass + backward pass
@@ -84,7 +84,7 @@ def echo_step_jax(Psi_in,Theta_in,kappa,k_abs,chi,
     # forward step 
 
     [Psi_out,Theta_out] =   \
-    sld.net_output_jax(Psi_in,Theta_in,kappa,k_abs,chi,T)
+    sld.net_output(Psi_in,Theta_in,kappa,k_abs,chi,T)
     
     cost = cf.C(Psi_out,target,interval_labels)
     
@@ -100,7 +100,7 @@ def echo_step_jax(Psi_in,Theta_in,kappa,k_abs,chi,
     # backward step 
     
     [Psi_bw_out,Theta_bw_out] =     \
-    sld.net_output_jax(Psi_bw_in,Theta_bw_in,kappa,k_abs,chi,T)
+    sld.net_output(Psi_bw_in,Theta_bw_in,kappa,k_abs,chi,T)
      
     [Psi_f,Theta_f] = TR(Psi_bw_out,Theta_bw_out,T)
     
@@ -108,6 +108,7 @@ def echo_step_jax(Psi_in,Theta_in,kappa,k_abs,chi,
 
 
 
+@jit
 def decay_step(Theta_in,eta,T):
     
     # implements the decay step
@@ -134,13 +135,13 @@ def HEB_step(Psi_in,Theta_in,kappa,k_abs,chi,
     
     
     [Psi_out,Theta_out,cost,acc] =    \
-          echo_step_jax(Psi_in,Theta_in,kappa,k_abs,chi,   
+          echo_step(Psi_in,Theta_in,kappa,k_abs,chi,   
                target,eps,interval_labels,T)
     
     Theta_out = decay_step(Theta_out,eta/2,T)
     
     [Psi_out,Theta_out,cost,acc_1] =    \
-          echo_step_jax(Psi_in,Theta_out,kappa,k_abs,chi,  
+          echo_step(Psi_in,Theta_out,kappa,k_abs,chi,  
                target,-eps,interval_labels,T)
     
     Theta_out = decay_step(Theta_out,-eta/2,T)
@@ -153,18 +154,22 @@ def HEB_step(Psi_in,Theta_in,kappa,k_abs,chi,
 
 
 
-
-
-
-
-
-
-
 def optimization(target,Psi_in,Theta_in,kappa,k_abs,chi,  
     N_train_steps,eps,eta,interval_labels,T,params_corr=None):
 
     
-    [N_modes,N_tsteps,N_samples] = jnp.shape(Psi_in)[:3]
+    [N_modes,N_tsteps,N_samples] = np.shape(Psi_in)[:3]
+    
+    
+    sample_index = np.random.randint(N_samples)
+        
+    Psi_in_step = (Psi_in[:,:,sample_index,...])
+        
+    target_step = (target[:,:,sample_index,...])
+    
+    [Theta_in,cost_n,acc_n] =    \
+         HEB_step(Psi_in_step,Theta_in,kappa,k_abs,chi,   \
+         target_step,eps,eta,interval_labels,T)
     
     
     for step in tqdm(range(N_train_steps)):
@@ -196,7 +201,6 @@ def optimization(target,Psi_in,Theta_in,kappa,k_abs,chi,
         
         
     return [Theta_in,cost,acc]
-
 
 
 
