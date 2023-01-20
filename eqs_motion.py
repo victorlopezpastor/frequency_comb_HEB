@@ -94,7 +94,7 @@ def RK4_evolve_diffrax(Phi_0,Phi_in,params,T):
     term = ODETerm(vector_field)
     solver = Tsit5()
     saveat = SaveAt(ts=t_array)
-    stepsize_controller = PIDController(rtol=1e-5, atol=1e-5)
+    stepsize_controller = PIDController(rtol=1e-5, atol=1e-4)
 
     sol = diffeqsolve(term, solver, t0=0, t1=T, dt0=0.05, y0=Phi_0, saveat=saveat,stepsize_controller=stepsize_controller)
     
